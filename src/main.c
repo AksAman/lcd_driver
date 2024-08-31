@@ -10,9 +10,9 @@ https://lcd-linux.sourceforge.net/pdfdocs/hd44780.pdf, 24, 43
 */
 
 #include <hal/nrf_gpio.h>
+#include <time.h>
 #include <zephyr/drivers/gpio.h>
 #include <zephyr/kernel.h>
-
 /* 1000 msec = 1 sec */
 #define SLEEP_TIME_MS 1000
 
@@ -106,6 +106,12 @@ void toggle_enable(volatile uint32_t *out_reg, volatile uint32_t *dir_reg) {
     k_msleep(ENABLE_DELAY);
 }
 
+void get_current_time(char *time_string) {
+    time_t now = time(NULL);
+    struct tm *time_info = localtime(&now);
+    strftime(time_string, 20, "%H:%M:%S", time_info);
+}
+
 void set_lcd_state(volatile uint32_t *out_reg, volatile uint32_t *dir_reg, int rs, int rw, int d7,
                    int d6, int d5, int d4, int d3, int d2, int d1, int d0) {
     // create a binary number with the values of the pins
@@ -134,44 +140,37 @@ void lcd_init(volatile uint32_t *out_reg, volatile uint32_t *dir_reg) {
     *dir_reg |= (1 << LCD_RS) | (1 << LCD_RW) | (1 << LCD_E) | (1 << LCD_D0) | (1 << LCD_D1) |
                 (1 << LCD_D2) | (1 << LCD_D3) | (1 << LCD_D4) | (1 << LCD_D5) | (1 << LCD_D6) |
                 (1 << LCD_D7);
+
+    lcd_function_set(out_reg, dir_reg);
+    lcd_display_on(out_reg, dir_reg, 1);
+    lcd_entry_mode_set(out_reg, dir_reg, 1, 0);
 }
 
 void blink_led_once(volatile uint32_t *out_reg, volatile uint32_t *dir_reg) {
-    // set_bit(out_reg, LED_BIT_POSITION, 1);
+    set_bit(out_reg, LED_BIT_POSITION, 1);
     k_msleep(SLEEP_TIME_MS);
-    // set_bit(out_reg, LED_BIT_POSITION, 0);
-    // k_msleep(SLEEP_TIME_MS);
+    set_bit(out_reg, LED_BIT_POSITION, 0);
+    k_msleep(SLEEP_TIME_MS);
 }
 
 void write_character_using_code(volatile uint32_t *out_reg, volatile uint32_t *dir_reg, int code) {
-    // get ascii value of character
-    // convert ascii value to binary
     uint32_t binary = convert_to_binary(code);
-
-    printf("Binary: ");
-    print_binary(binary);
-
     uint32_t out_reg_value = *out_reg;
 
-    int pins[8] = {LCD_D7, LCD_D6, LCD_D5, LCD_D4, LCD_D3, LCD_D2, LCD_D1, LCD_D0};
+    int pins[8] = {LCD_D0, LCD_D1, LCD_D2, LCD_D3, LCD_D4, LCD_D5, LCD_D6, LCD_D7};
     for (int i = 0; i < 8; i++) {
         int bit = binary & (1 << i);
-        printf("\t step: %d, bit: %d, pin: %d\n", i, bit, pins[8 - i + 1]);
-        set_bit(&out_reg_value, pins[8 - i - 1], bit != 0 ? 1 : 0);
+        set_bit(&out_reg_value, pins[i], bit != 0 ? 1 : 0);
     }
-
-    print_register(out_reg_value, "write_character out_reg");
+    // enable write mode
     set_bit(&out_reg_value, LCD_RS, 1);
     set_bit(&out_reg_value, LCD_RW, 0);
-    print_register(out_reg_value, "write_character::After out_reg");
     *out_reg = out_reg_value;
     toggle_enable(out_reg, dir_reg);
 }
 // write character
 void write_character(volatile uint32_t *out_reg, volatile uint32_t *dir_reg, char character) {
-    // get ascii value of character
     int ascii_value = (int)character;
-    // convert ascii value to binary
     write_character_using_code(out_reg, dir_reg, ascii_value);
 }
 
@@ -186,14 +185,22 @@ void write_string(volatile uint32_t *out_reg, volatile uint32_t *dir_reg, char *
     }
 }
 
+void clear_lcd(volatile uint32_t *out_reg, volatile uint32_t *dir_reg) {
+    set_lcd_state(out_reg, dir_reg,
+                  0, 0,
+                  0, 0, 0, 0,
+                  0, 0, 0, 1);
+    print_register(out_reg, "clear_lcd out_reg");
+}
+
 void lcd_function_set(volatile uint32_t *out_reg, volatile uint32_t *dir_reg) {
     set_lcd_state(out_reg, dir_reg,
                   // RS, RW
                   0, 0,
                   // D0-D7
-                  0, 0, 1, 1,
+                  0, 0, 1, 1, // 0x3
                   //
-                  1, 0, 0, 0);
+                  1, 0, 0, 0); // 0x8
     print_register(out_reg, "function set out_reg");
 }
 
@@ -216,6 +223,14 @@ void lcd_display_on(volatile uint32_t *out_reg, volatile uint32_t *dir_reg, int 
     print_register(out_reg, "Display on/off control out_reg");
 }
 
+void shift_display(volatile uint32_t *out_reg, volatile uint32_t *dir_reg, int shift_direction) {
+    set_lcd_state(out_reg, dir_reg,
+                  0, 0,
+                  0, 0, 0, 1,
+                  1, shift_direction, 0, 0);
+    print_register(out_reg, "Shift display out_reg");
+}
+
 void lcd_entry_mode_set(volatile uint32_t *out_reg, volatile uint32_t *dir_reg,
                         volatile int increment, volatile int display_shift) {
     set_lcd_state(out_reg, dir_reg,
@@ -229,14 +244,35 @@ void lcd_entry_mode_set(volatile uint32_t *out_reg, volatile uint32_t *dir_reg,
     print_register(out_reg, "Entry mode set out_reg");
 }
 
-void run_lcd(volatile uint32_t *out_reg, volatile uint32_t *dir_reg) {
-    set_bit(out_reg, LCD_E, 1);
-    lcd_function_set(out_reg, dir_reg);
-    lcd_display_on(out_reg, dir_reg, 1);
-    lcd_entry_mode_set(out_reg, dir_reg, 1, 0);
+void set_cursor_position(volatile uint32_t *out_reg, volatile uint32_t *dir_reg, int row, int col) {
+    int memory_address = 0x800 + (row * 0x40) + col;
+    write_character_using_code(out_reg, dir_reg, memory_address);
+}
 
+void run_lcd(volatile uint32_t *out_reg, volatile uint32_t *dir_reg) {
+
+    char time_string[20];
+    clear_lcd(out_reg, dir_reg);
     write_string(out_reg, dir_reg, "Mave Health\nPrivate Limited!");
     write_character_using_code(out_reg, dir_reg, 0xEF);
+    int display_length = 14;
+    int counter = 0;
+
+    blink_led_once(out_reg, dir_reg);
+    while (1) {
+        k_msleep(50);
+        get_current_time(time_string);
+        clear_lcd(out_reg, dir_reg);
+        write_string(out_reg, dir_reg, time_string);
+        int shift_direction = counter >= display_length ? 1 : 0;
+        // shift_display(out_reg, dir_reg, shift_direction);
+        printf("Counter: %d\n", counter);
+        counter++;
+        if (counter >= display_length) {
+            counter = 0;
+        }
+        // blink_led_once(out_reg, dir_reg);
+    }
 }
 
 void blink_led(volatile uint32_t *out_reg, volatile uint32_t *dir_reg) {
