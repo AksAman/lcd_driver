@@ -132,18 +132,7 @@ void set_lcd_state(volatile uint32_t *out_reg, volatile uint32_t *dir_reg, int r
     *out_reg = binary;
     toggle_enable(out_reg, dir_reg);
 
-    k_msleep(400);
-}
-
-void lcd_init(volatile uint32_t *out_reg, volatile uint32_t *dir_reg) {
-    // set all pins to output
-    *dir_reg |= (1 << LCD_RS) | (1 << LCD_RW) | (1 << LCD_E) | (1 << LCD_D0) | (1 << LCD_D1) |
-                (1 << LCD_D2) | (1 << LCD_D3) | (1 << LCD_D4) | (1 << LCD_D5) | (1 << LCD_D6) |
-                (1 << LCD_D7);
-
-    lcd_function_set(out_reg, dir_reg);
-    lcd_display_on(out_reg, dir_reg, 1);
-    lcd_entry_mode_set(out_reg, dir_reg, 1, 0);
+    // k_msleep(400);
 }
 
 void blink_led_once(volatile uint32_t *out_reg, volatile uint32_t *dir_reg) {
@@ -174,6 +163,14 @@ void write_character(volatile uint32_t *out_reg, volatile uint32_t *dir_reg, cha
     write_character_using_code(out_reg, dir_reg, ascii_value);
 }
 
+void change_line(volatile uint32_t *out_reg, volatile uint32_t *dir_reg) {
+    set_lcd_state(out_reg, dir_reg,
+                  0, 0,
+                  1, 1, 0, 0,
+                  0, 0, 0, 0);
+    print_register(out_reg, "change_line out_reg");
+}
+
 void write_string(volatile uint32_t *out_reg, volatile uint32_t *dir_reg, char *string) {
     for (int i = 0; i < strlen(string); i++) {
         char character = string[i];
@@ -202,14 +199,6 @@ void lcd_function_set(volatile uint32_t *out_reg, volatile uint32_t *dir_reg) {
                   //
                   1, 0, 0, 0); // 0x8
     print_register(out_reg, "function set out_reg");
-}
-
-void change_line(volatile uint32_t *out_reg, volatile uint32_t *dir_reg) {
-    set_lcd_state(out_reg, dir_reg,
-                  0, 0,
-                  1, 1, 0, 0,
-                  0, 0, 0, 0);
-    print_register(out_reg, "change_line out_reg");
 }
 
 void lcd_display_on(volatile uint32_t *out_reg, volatile uint32_t *dir_reg, int cursor_blink) {
@@ -245,33 +234,53 @@ void lcd_entry_mode_set(volatile uint32_t *out_reg, volatile uint32_t *dir_reg,
 }
 
 void set_cursor_position(volatile uint32_t *out_reg, volatile uint32_t *dir_reg, int row, int col) {
-    int memory_address = 0x800 + (row * 0x40) + col;
-    write_character_using_code(out_reg, dir_reg, memory_address);
+    int address = row == 0 ? 0x80 + col : 0xC0 + col;
+    set_lcd_state(out_reg, dir_reg,
+                  0, 0,
+                  (address >> 7) & 1, (address >> 6) & 1, (address >> 5) & 1, (address >> 4) & 1,
+                  (address >> 3) & 1, (address >> 2) & 1, (address >> 1) & 1, address & 1);
+}
+
+void lcd_init(volatile uint32_t *out_reg, volatile uint32_t *dir_reg) {
+    // set all pins to output
+    *dir_reg |= (1 << LCD_RS) | (1 << LCD_RW) | (1 << LCD_E) | (1 << LCD_D0) | (1 << LCD_D1) |
+                (1 << LCD_D2) | (1 << LCD_D3) | (1 << LCD_D4) | (1 << LCD_D5) | (1 << LCD_D6) |
+                (1 << LCD_D7);
+
+    lcd_function_set(out_reg, dir_reg);
+    lcd_display_on(out_reg, dir_reg, 1);
+    lcd_entry_mode_set(out_reg, dir_reg, 1, 0);
 }
 
 void run_lcd(volatile uint32_t *out_reg, volatile uint32_t *dir_reg) {
 
-    char time_string[20];
+    // char time_string[20];
     clear_lcd(out_reg, dir_reg);
     write_string(out_reg, dir_reg, "Mave Health\nPrivate Limited!");
     write_character_using_code(out_reg, dir_reg, 0xEF);
     int display_length = 14;
     int counter = 0;
-
+    char counter_string[4];
     blink_led_once(out_reg, dir_reg);
+    clear_lcd(out_reg, dir_reg);
+
+    char *base_string = "Counter: ";
+    write_string(out_reg, dir_reg, base_string);
+    // get length of "Counter: "
+    int base_string_length = strlen(base_string);
     while (1) {
-        k_msleep(50);
-        get_current_time(time_string);
-        clear_lcd(out_reg, dir_reg);
-        write_string(out_reg, dir_reg, time_string);
-        int shift_direction = counter >= display_length ? 1 : 0;
-        // shift_display(out_reg, dir_reg, shift_direction);
-        printf("Counter: %d\n", counter);
+        k_msleep(50); // Update every 500ms for better visibility
+
+        // Set cursor to position where the counter should be displayed
+        set_cursor_position(out_reg, dir_reg, 0, base_string_length);
+
+        sprintf(counter_string, "%3d", counter); // Use %3d for consistent width
+        write_string(out_reg, dir_reg, counter_string);
+
         counter++;
-        if (counter >= display_length) {
+        if (counter > 999) {
             counter = 0;
         }
-        // blink_led_once(out_reg, dir_reg);
     }
 }
 
