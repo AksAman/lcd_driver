@@ -44,7 +44,7 @@ static const struct gpio_dt_spec lcd_d7 = GPIO_DT_SPEC_GET(DT_NODELABEL(lcd_d7),
 void run_lcd(const struct device *_gpio_dev) {
 
     clear_lcd();
-    write_string("Mave Health\nPrivate Limited!");
+    write_string("Mave Health\nPrivate Limited");
     write_character_using_code(0xEF);
     k_msleep(1000);
     int counter = 0;
@@ -66,13 +66,12 @@ void run_lcd(const struct device *_gpio_dev) {
         write_string(counter_string);
 
         counter = (counter + 1) % (max_counter + 1);
-        int ret = gpio_pin_toggle_dt(&external_led);
         gpio_pin_set(_gpio_dev, external_led.pin, counter % 2 == 0 ? 0 : 1);
     }
 }
 
 int main(void) {
-    const struct device *const gpio_dev = DEVICE_DT_GET(DT_NODELABEL(gpio1));
+    struct device *gpio_dev = DEVICE_DT_GET(DT_NODELABEL(gpio1));
     if (!device_is_ready(gpio_dev)) {
         printk("gpio_dev::Device %s not ready!\n", gpio_dev->name);
         return 0;

@@ -152,7 +152,7 @@ void clear_lcd() {
     set_lcd_state_bitmask(0x0, 0x01);
 }
 
-void lcd_init(const struct device *_gpio_dev, int rs, int rw, int e, int d0,
+void lcd_init(struct device *_gpio_dev, int rs, int rw, int e, int d0,
               int d1, int d2, int d3, int d4, int d5, int d6, int d7) {
     control_pins[0] = LCD_RS = rs;
     control_pins[1] = LCD_RW = rw;

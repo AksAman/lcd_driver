@@ -3,7 +3,7 @@
 #include <stdint.h>
 #include <zephyr/drivers/gpio.h>
 
-void lcd_init(const struct device *_gpio_dev, int rs, int rw, int e, int d0,
+void lcd_init(struct device *_gpio_dev, int rs, int rw, int e, int d0,
               int d1, int d2, int d3, int d4, int d5, int d6, int d7);
 void toggle_enable();
 void set_lcd_state_bitmask(uint32_t _control_pins, uint32_t _data_pins);

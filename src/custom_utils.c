@@ -1,4 +1,5 @@
 #include "custom_utils.h"
+#include <stdio.h>
 #include <zephyr/sys/util_macro.h>
 
 uint32_t convert_to_binary(int value) {
