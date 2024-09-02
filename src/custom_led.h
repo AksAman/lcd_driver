@@ -1,5 +1,5 @@
-#ifndef CUSTOM_UTILS
-#define CUSTOM_UTILS
+#ifndef CUSTOM_LED
+#define CUSTOM_LED
 #include <stdint.h>
 
 void init_led(int bit_position, int sleep_time_ms, volatile uint32_t *out_reg, volatile uint32_t *dir_reg);
