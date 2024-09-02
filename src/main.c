@@ -9,7 +9,6 @@ References:
 https://lcd-linux.sourceforge.net/pdfdocs/hd44780.pdf, 24, 43
 */
 
-// #include "custom_led.h"
 #include "custom_utils.h"
 #include "lcd_driver.h"
 #include <zephyr/drivers/gpio.h>
@@ -46,7 +45,7 @@ void run_lcd(const struct device *_gpio_dev) {
 
     clear_lcd();
     write_string("Mave Health\nPrivate Limited!");
-    // write_character_using_code(0xEF);
+    write_character_using_code(0xEF);
     k_msleep(1000);
     int counter = 0;
     char counter_string[4];
@@ -68,12 +67,7 @@ void run_lcd(const struct device *_gpio_dev) {
 
         counter = (counter + 1) % (max_counter + 1);
         int ret = gpio_pin_toggle_dt(&external_led);
-        if (ret < 0) {
-            printk("Error toggling external led\n");
-            return 0;
-        }
-        // gpio_pin_set(_gpio_dev, external_led.pin, counter % 2);
-        // printf("counter: %d\n", counter);
+        gpio_pin_set(_gpio_dev, external_led.pin, counter % 2 == 0 ? 0 : 1);
     }
 }
 
@@ -88,20 +82,21 @@ int main(void) {
         printk("external_led::Device %s not ready!\n", external_led.port->name);
         return 0;
     }
-
-    // printf("Initializing\n");
-    // volatile uint32_t *p0_dir_reg = (volatile uint32_t *)(P0_BASE_ADDRESS + GPIO_DIR_OFFSET);
-    // print_register(p0_dir_reg, "p0_dir_reg");
-    // volatile uint32_t *p0_out_reg = (volatile uint32_t *)(P0_BASE_ADDRESS + GPIO_OUT_OFFSET);
-    // print_register(p0_out_reg, "p0_out_reg");
-    // volatile uint32_t *p1_out_reg = (volatile uint32_t *)(P1_BASE_ADDRESS + GPIO_OUT_OFFSET);
-    // print_register(p1_out_reg, "p1_out_reg");
-    // volatile uint32_t *p1_dir_reg = (volatile uint32_t *)(P1_BASE_ADDRESS + GPIO_DIR_OFFSET);
-    // print_register(p1_out_reg, "p1_out_reg");
+    printf("Initializing\n");
     int ret;
     ret = gpio_pin_configure_dt(&external_led, GPIO_OUTPUT_ACTIVE);
     if (ret < 0) {
+        printk("external_led::Device %s not ready!\n", external_led.port->name);
         return 0;
+    }
+
+    struct gpio_dt_spec lcd_specs[] = {lcd_rs, lcd_rw, lcd_e, lcd_d0, lcd_d1, lcd_d2, lcd_d3, lcd_d4, lcd_d5, lcd_d6, lcd_d7};
+    for (int i = 0; i < sizeof(lcd_specs) / sizeof(struct gpio_dt_spec); i++) {
+        if (!gpio_is_ready_dt(&lcd_specs[i])) {
+            char *port_name = lcd_specs[i].port->name;
+            printk("lcd_pins[%d]::Device %s not ready!\n", i, port_name);
+            return 0;
+        }
     }
 
     lcd_init(gpio_dev, lcd_rs.pin, lcd_rw.pin, lcd_e.pin, lcd_d0.pin, lcd_d1.pin, lcd_d2.pin, lcd_d3.pin, lcd_d4.pin, lcd_d5.pin, lcd_d6.pin, lcd_d7.pin);
