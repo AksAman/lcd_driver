@@ -17,13 +17,6 @@ https://lcd-linux.sourceforge.net/pdfdocs/hd44780.pdf, 24, 43
 #define SLEEP_TIME_MS 1000
 #define COUNTER_SLEEP_TIME_MS 200
 
-#define P0_BASE_ADDRESS 0x50000000
-#define P1_BASE_ADDRESS 0x50000300
-
-#define GPIO_OUT_OFFSET 0x504
-#define GPIO_IN_OFFSET 0x510
-#define GPIO_DIR_OFFSET 0x514
-
 static const struct gpio_dt_spec external_led = GPIO_DT_SPEC_GET(DT_NODELABEL(ext_led), gpios);
 
 static const struct gpio_dt_spec lcd_rs = GPIO_DT_SPEC_GET(DT_NODELABEL(lcd_rs), gpios);
