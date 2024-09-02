@@ -10,6 +10,7 @@ https://lcd-linux.sourceforge.net/pdfdocs/hd44780.pdf, 24, 43
 */
 
 #include "custom_led.h"
+#include "custom_utils.h"
 #include "lcd_driver.h"
 #include <zephyr/drivers/gpio.h>
 #include <zephyr/kernel.h>
@@ -47,7 +48,6 @@ void run_lcd(volatile uint32_t *out_reg, volatile uint32_t *dir_reg) {
     write_string(out_reg, dir_reg, "Mave Health\nPrivate Limited!");
     write_character_using_code(out_reg, dir_reg, 0xEF);
     k_msleep(1000);
-    int display_length = 14;
     int counter = 0;
     char counter_string[4];
     blink_led_once(out_reg, dir_reg);
@@ -73,53 +73,19 @@ void run_lcd(volatile uint32_t *out_reg, volatile uint32_t *dir_reg) {
     }
 }
 
-#define LED0_NODE DT_ALIAS(led0)
-static const struct gpio_dt_spec led = GPIO_DT_SPEC_GET(LED0_NODE, gpios);
-
 int main(void) {
-    const struct device *const gpio_dev = DEVICE_DT_GET(DT_NODELABEL(gpio1));
-    if (!device_is_ready(gpio_dev)) {
-        printk("gpio_dev::Device %s not ready!\n", gpio_dev->name);
-        return 0;
-    }
-
     printf("Initializing\n");
     volatile uint32_t *p0_dir_reg = (volatile uint32_t *)(P0_BASE_ADDRESS + GPIO_DIR_OFFSET);
     print_register(p0_dir_reg, "p0_dir_reg");
     volatile uint32_t *p0_out_reg = (volatile uint32_t *)(P0_BASE_ADDRESS + GPIO_OUT_OFFSET);
     print_register(p0_out_reg, "p0_out_reg");
 
-    int ret;
-    ret = gpio_pin_configure(gpio_dev, LED_BIT_POSITION, GPIO_OUTPUT_ACTIVE);
-    if (ret != 0) {
-        printk("Failed to configure GPIO pin %d, ret: %d\n", LED_BIT_POSITION, ret);
-        return 0;
-    }
-    ret = gpio_pin_set_raw(gpio_dev, LED_BIT_POSITION, LOW);
-    if (ret != 0) {
-        printk("Failed to set GPIO pin %d, ret: %d\n", LED_BIT_POSITION, ret);
-        return 0;
-    }
-    k_msleep(1000);
-    ret = gpio_pin_set_raw(gpio_dev, LED_BIT_POSITION, HIGH);
-    if (ret != 0) {
-        printk("Failed to set GPIO pin %d, ret: %d\n", LED_BIT_POSITION, ret);
-        return 0;
-    }
-    // printf("led.pin: %d\n", led.pin);
-    // printf("LED_BIT_POSITION: %d\n", LED_BIT_POSITION);
-
-    // set_bit(p0_dir_reg, LED_BIT_POSITION, 1);
-    // set_bit(p0_out_reg, LED_BIT_POSITION, 1);
-    // set_led(p0_out_reg, p0_dir_reg, 1);
-
-    // uint32_t pin13address = P0_BASE_ADDRESS + GPIO_OUT_OFFSET + 13;
-    // print_register(pin13address, "pin13address");
     volatile uint32_t *p1_out_reg = (volatile uint32_t *)(P1_BASE_ADDRESS + GPIO_OUT_OFFSET);
     print_register(p1_out_reg, "p1_out_reg");
     volatile uint32_t *p1_dir_reg = (volatile uint32_t *)(P1_BASE_ADDRESS + GPIO_DIR_OFFSET);
     print_register(p1_out_reg, "p1_out_reg");
 
+    init_led(LED_BIT_POSITION, COUNTER_SLEEP_TIME_MS, p1_out_reg, p1_dir_reg);
     lcd_init(p1_out_reg, p1_dir_reg, LCD_RS, LCD_RW, LCD_E, LCD_D0, LCD_D1, LCD_D2, LCD_D3, LCD_D4, LCD_D5, LCD_D6, LCD_D7);
     set_led(p1_out_reg, p1_dir_reg, 1);
     run_lcd(p1_out_reg, p1_dir_reg);
