@@ -27,17 +27,18 @@ https://lcd-linux.sourceforge.net/pdfdocs/hd44780.pdf, 24, 43
 #define LED0_NODE DT_ALIAS(led0)
 static const struct gpio_dt_spec led = GPIO_DT_SPEC_GET(LED0_NODE, gpios);
 
-static const struct gpio_dt_spec lcd_rs = GPIO_DT_SPEC_GET(DT_NODELABEL(rs), gpios);
-static const struct gpio_dt_spec lcd_rw = GPIO_DT_SPEC_GET(DT_NODELABEL(rw), gpios);
-static const struct gpio_dt_spec lcd_e = GPIO_DT_SPEC_GET(DT_NODELABEL(e), gpios);
-static const struct gpio_dt_spec lcd_d0 = GPIO_DT_SPEC_GET(DT_NODELABEL(d0), gpios);
-static const struct gpio_dt_spec lcd_d1 = GPIO_DT_SPEC_GET(DT_NODELABEL(d1), gpios);
-static const struct gpio_dt_spec lcd_d2 = GPIO_DT_SPEC_GET(DT_NODELABEL(d2), gpios);
-static const struct gpio_dt_spec lcd_d3 = GPIO_DT_SPEC_GET(DT_NODELABEL(d3), gpios);
-static const struct gpio_dt_spec lcd_d4 = GPIO_DT_SPEC_GET(DT_NODELABEL(d4), gpios);
-static const struct gpio_dt_spec lcd_d5 = GPIO_DT_SPEC_GET(DT_NODELABEL(d5), gpios);
-static const struct gpio_dt_spec lcd_d6 = GPIO_DT_SPEC_GET(DT_NODELABEL(d6), gpios);
-static const struct gpio_dt_spec lcd_d7 = GPIO_DT_SPEC_GET(DT_NODELABEL(d7), gpios);
+static const struct gpio_dt_spec lcd_rs = GPIO_DT_SPEC_GET(DT_NODELABEL(lcd_rs), gpios);
+static const struct gpio_dt_spec lcd_rw = GPIO_DT_SPEC_GET(DT_NODELABEL(lcd_rw), gpios);
+static const struct gpio_dt_spec lcd_e = GPIO_DT_SPEC_GET(DT_NODELABEL(lcd_enable), gpios);
+static const struct gpio_dt_spec lcd_d0 = GPIO_DT_SPEC_GET(DT_NODELABEL(lcd_d0), gpios);
+static const struct gpio_dt_spec lcd_d1 = GPIO_DT_SPEC_GET(DT_NODELABEL(lcd_d1), gpios);
+static const struct gpio_dt_spec lcd_d2 = GPIO_DT_SPEC_GET(DT_NODELABEL(lcd_d2), gpios);
+static const struct gpio_dt_spec lcd_d3 = GPIO_DT_SPEC_GET(DT_NODELABEL(lcd_d3), gpios);
+static const struct gpio_dt_spec lcd_d4 = GPIO_DT_SPEC_GET(DT_NODELABEL(lcd_d4), gpios);
+static const struct gpio_dt_spec lcd_d5 = GPIO_DT_SPEC_GET(DT_NODELABEL(lcd_d5), gpios);
+static const struct gpio_dt_spec lcd_d6 = GPIO_DT_SPEC_GET(DT_NODELABEL(lcd_d6), gpios);
+static const struct gpio_dt_spec lcd_d7 = GPIO_DT_SPEC_GET(DT_NODELABEL(lcd_d7), gpios);
+
 #define LED_BIT_POSITION 14
 #define HIGH 1
 #define LOW 0
