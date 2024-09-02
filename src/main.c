@@ -16,6 +16,9 @@ https://lcd-linux.sourceforge.net/pdfdocs/hd44780.pdf, 24, 43
 /* 1000 msec = 1 sec */
 #define SLEEP_TIME_MS 1000
 #define COUNTER_SLEEP_TIME_MS 200
+#define HIGH 1
+#define LOW 0
+
 
 static const struct gpio_dt_spec external_led = GPIO_DT_SPEC_GET(DT_NODELABEL(ext_led), gpios);
 
@@ -31,8 +34,7 @@ static const struct gpio_dt_spec lcd_d5 = GPIO_DT_SPEC_GET(DT_NODELABEL(lcd_d5),
 static const struct gpio_dt_spec lcd_d6 = GPIO_DT_SPEC_GET(DT_NODELABEL(lcd_d6), gpios);
 static const struct gpio_dt_spec lcd_d7 = GPIO_DT_SPEC_GET(DT_NODELABEL(lcd_d7), gpios);
 
-#define HIGH 1
-#define LOW 0
+
 
 void run_lcd(const struct device *_gpio_dev) {
 
