@@ -28,18 +28,62 @@ static int control_pins[3];
 
 static struct device *gpio_dev;
 
-int set_gpio_bit(int pin, int value) {
-    return gpio_pin_set_raw(gpio_dev, pin, value);
+void set_pins_as_output(int pins[], int length) {
+    for (int i = 0; i < length; i++) {
+        gpio_pin_configure(gpio_dev, pins[i], GPIO_OUTPUT);
+    }
 }
 
+void set_pins_as_input(int pins[], int length) {
+    for (int i = 0; i < length; i++) {
+        gpio_pin_configure(gpio_dev, pins[i], GPIO_INPUT);
+    }
+}
 void toggle_enable() {
-    set_gpio_bit(LCD_E, 0);
+    gpio_pin_set_raw(gpio_dev, LCD_E, 0);
     k_msleep(ENABLE_DELAY);
-    // *out_reg &= ~((1 << LCD_RW) | (1 << LCD_RS) | (1 << LCD_E));
-    set_gpio_bit(LCD_E, 1);
+    gpio_pin_set_raw(gpio_dev, LCD_E, 1);
     k_msleep(ENABLE_DELAY);
-    set_gpio_bit(LCD_E, 0);
+    gpio_pin_set_raw(gpio_dev, LCD_E, 0);
     k_msleep(ENABLE_DELAY);
+}
+
+void smart_toggle_enable() {
+    // temporarily store the values of data_pins
+    // uint32_t orig_data_pins_values = 0;
+    // for (int i = 0; i < sizeof(data_pins) / sizeof(data_pins[0]); i++) {
+    //     orig_data_pins_values |= gpio_pin_get(gpio_dev, data_pins[i]);
+    // }
+    // print_binary(orig_data_pins_values);
+    int busy_flag = 1;
+    printf("Waiting for busy flag to be 0\n");
+    gpio_pin_set_raw(gpio_dev, LCD_E, 0);
+    set_pins_as_input(data_pins, sizeof(data_pins) / sizeof(data_pins[0]));
+    while (busy_flag != 0) {
+
+        gpio_pin_set_raw(gpio_dev, LCD_RS, 0);
+        gpio_pin_set_raw(gpio_dev, LCD_E, 1);
+        gpio_pin_set_raw(gpio_dev, LCD_RW, 1);
+
+        int data_pins_value = 0;
+        for (int i = 0; i < sizeof(data_pins) / sizeof(data_pins[0]); i++) {
+            data_pins_value |= gpio_pin_get(gpio_dev, data_pins[i]) << i;
+        }
+        busy_flag = (data_pins_value & (1 << 7)) >> 7;
+        printf("\tbusy_flag: %d\n", busy_flag);
+    }
+
+    printf("Not busy\n");
+
+    set_pins_as_output(data_pins, sizeof(data_pins) / sizeof(data_pins[0]));
+    gpio_pin_set_raw(gpio_dev, LCD_RS, 0);
+    gpio_pin_set_raw(gpio_dev, LCD_RW, 0);
+    gpio_pin_set_raw(gpio_dev, LCD_E, 1);
+    gpio_pin_set_raw(gpio_dev, LCD_E, 0);
+    // restore the values of data_pins
+    // for (int i = 0; i < sizeof(data_pins) / sizeof(data_pins[0]); i++) {
+    //     gpio_pin_set_raw(gpio_dev, data_pins[i], (orig_data_pins_values >> i) & 1);
+    // }
 }
 
 void set_lcd_state_bitmask(uint32_t _control_pin_values, uint32_t _data_pin_values) {
@@ -167,15 +211,8 @@ void lcd_init(struct device *_gpio_dev, int rs, int rw, int e, int d0,
     data_pins[7] = LCD_D7 = d7;
 
     gpio_dev = _gpio_dev;
-    int control_pins_length = sizeof(control_pins) / sizeof(control_pins[0]);
-    for (int i = 0; i < control_pins_length; i++) {
-        gpio_pin_configure(gpio_dev, control_pins[i], GPIO_OUTPUT_HIGH);
-    }
-
-    int data_pins_length = sizeof(data_pins) / sizeof(data_pins[0]);
-    for (int i = 0; i < data_pins_length; i++) {
-        gpio_pin_configure(gpio_dev, data_pins[i], GPIO_OUTPUT_HIGH);
-    }
+    set_pins_as_output(control_pins, sizeof(control_pins) / sizeof(control_pins[0]));
+    set_pins_as_output(data_pins, sizeof(data_pins) / sizeof(data_pins[0]));
 
     lcd_function_set(MODE_8_BIT, TWO_LINE, FIVE_BY_TEN);
     lcd_display_on(CURSOR_BLINK);
