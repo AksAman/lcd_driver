@@ -1,4 +1,5 @@
 #include "custom_utils.h"
+#include <zephyr/sys/util_macro.h>
 
 uint32_t convert_to_binary(int value) {
     uint32_t binary = 0;
@@ -24,9 +25,9 @@ void print_binary(uint32_t value) {
 
 void print_register(volatile uint32_t *reg, const char *name) {
     printf("Register: %s\n", name);
-    printf("%s Address: 0x%p\n", name, (void *)reg);
-    printf("%s Value (hex): 0x%08x\n", name, *reg);
-    printf("%s Value (binary): ", name);
+    printf("\t  %s Address: %p\n", name, (void *)reg);
+    printf("\t  %s Value (hex): 0x%08x\n", name, *reg);
+    printf("\t  %s Value (binary): ", name);
     print_binary(*reg);
 
     printf("\n\n");
@@ -34,8 +35,8 @@ void print_register(volatile uint32_t *reg, const char *name) {
 
 void set_bit(volatile uint32_t *reg, int bit, int state) {
     if (state) {
-        *reg |= (1 << bit);
+        *reg |= BIT(bit);
     } else {
-        *reg &= ~(1 << bit);
+        *reg &= ~BIT(bit);
     }
 }
