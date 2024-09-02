@@ -23,19 +23,21 @@ https://lcd-linux.sourceforge.net/pdfdocs/hd44780.pdf, 24, 43
 #define GPIO_OUT_OFFSET 0x504
 #define GPIO_IN_OFFSET 0x510
 #define GPIO_DIR_OFFSET 0x514
-#define LCD_RS 12
-#define LCD_RW 11
-#define LCD_E 10
 
-#define LCD_D0 8
-#define LCD_D1 7
-#define LCD_D2 6
-#define LCD_D3 5
-#define LCD_D4 4
-#define LCD_D5 3
-#define LCD_D6 2
-#define LCD_D7 1
+#define LED0_NODE DT_ALIAS(led0)
+static const struct gpio_dt_spec led = GPIO_DT_SPEC_GET(LED0_NODE, gpios);
 
+static const struct gpio_dt_spec lcd_rs = GPIO_DT_SPEC_GET(DT_NODELABEL(rs), gpios);
+static const struct gpio_dt_spec lcd_rw = GPIO_DT_SPEC_GET(DT_NODELABEL(rw), gpios);
+static const struct gpio_dt_spec lcd_e = GPIO_DT_SPEC_GET(DT_NODELABEL(e), gpios);
+static const struct gpio_dt_spec lcd_d0 = GPIO_DT_SPEC_GET(DT_NODELABEL(d0), gpios);
+static const struct gpio_dt_spec lcd_d1 = GPIO_DT_SPEC_GET(DT_NODELABEL(d1), gpios);
+static const struct gpio_dt_spec lcd_d2 = GPIO_DT_SPEC_GET(DT_NODELABEL(d2), gpios);
+static const struct gpio_dt_spec lcd_d3 = GPIO_DT_SPEC_GET(DT_NODELABEL(d3), gpios);
+static const struct gpio_dt_spec lcd_d4 = GPIO_DT_SPEC_GET(DT_NODELABEL(d4), gpios);
+static const struct gpio_dt_spec lcd_d5 = GPIO_DT_SPEC_GET(DT_NODELABEL(d5), gpios);
+static const struct gpio_dt_spec lcd_d6 = GPIO_DT_SPEC_GET(DT_NODELABEL(d6), gpios);
+static const struct gpio_dt_spec lcd_d7 = GPIO_DT_SPEC_GET(DT_NODELABEL(d7), gpios);
 #define LED_BIT_POSITION 14
 #define HIGH 1
 #define LOW 0
@@ -72,9 +74,6 @@ void run_lcd(volatile uint32_t *out_reg, volatile uint32_t *dir_reg) {
         // printf("counter: %d\n", counter);
     }
 }
-
-#define LED0_NODE DT_ALIAS(led0)
-static const struct gpio_dt_spec led = GPIO_DT_SPEC_GET(LED0_NODE, gpios);
 
 int main(void) {
     const struct device *const gpio_dev = DEVICE_DT_GET(DT_NODELABEL(gpio1));
@@ -120,7 +119,7 @@ int main(void) {
     volatile uint32_t *p1_dir_reg = (volatile uint32_t *)(P1_BASE_ADDRESS + GPIO_DIR_OFFSET);
     print_register(p1_out_reg, "p1_out_reg");
 
-    lcd_init(p1_out_reg, p1_dir_reg, LCD_RS, LCD_RW, LCD_E, LCD_D0, LCD_D1, LCD_D2, LCD_D3, LCD_D4, LCD_D5, LCD_D6, LCD_D7);
+    lcd_init(p1_out_reg, p1_dir_reg, lcd_rs.pin, lcd_rw.pin, lcd_e.pin, lcd_d0.pin, lcd_d1.pin, lcd_d2.pin, lcd_d3.pin, lcd_d4.pin, lcd_d5.pin, lcd_d6.pin, lcd_d7.pin);
     set_led(p1_out_reg, p1_dir_reg, 1);
     run_lcd(p1_out_reg, p1_dir_reg);
 }
