@@ -35,8 +35,8 @@ void toggle_enable(volatile uint32_t *out_reg, volatile uint32_t *dir_reg) {
     k_msleep(ENABLE_DELAY);
 }
 
-void set_lcd_state_2(volatile uint32_t *out_reg, volatile uint32_t *dir_reg, int rs, int rw, int d7,
-                     int d6, int d5, int d4, int d3, int d2, int d1, int d0) {
+void _set_lcd_state(volatile uint32_t *out_reg, volatile uint32_t *dir_reg, int rs, int rw, int d7,
+                    int d6, int d5, int d4, int d3, int d2, int d1, int d0) {
     // create a binary number with the values of the pins
     uint32_t binary = 0;
     *out_reg = binary;
@@ -85,35 +85,14 @@ void set_lcd_state_bitmask(volatile uint32_t *out_reg, volatile uint32_t *dir_re
     // k_msleep(400);
 }
 
-void set_lcd_state_array(volatile uint32_t *out_reg, volatile uint32_t *dir_reg, int _control_pins[3],
-                         int _data_pins[8]) {
-    // create a binary number with the values of the pins
-    uint32_t binary = 0;
-    *out_reg = binary;
-
-    int control_pins_length = sizeof(control_pins) / sizeof(control_pins[0]);
-    int data_pins_length = sizeof(data_pins) / sizeof(data_pins[0]);
-
-    for (int i = 0; i < control_pins_length; i++) {
-        set_bit(&binary, control_pins[i], _control_pins[i]);
-    }
-
-    for (int i = 0; i < data_pins_length; i++) {
-        set_bit(&binary, data_pins[i], _data_pins[i]);
-    }
-
-    *out_reg = binary;
-    toggle_enable(out_reg, dir_reg);
-
-    // k_msleep(400);
-}
-
 void set_cursor_position(volatile uint32_t *out_reg, volatile uint32_t *dir_reg, int row, int col) {
     int address = row == 0 ? 0x80 + col : 0xC0 + col;
-    set_lcd_state_2(out_reg, dir_reg,
-                    0, 0,
-                    (address >> 7) & 1, (address >> 6) & 1, (address >> 5) & 1, (address >> 4) & 1,
-                    (address >> 3) & 1, (address >> 2) & 1, (address >> 1) & 1, address & 1);
+    _set_lcd_state(out_reg, dir_reg,
+                   0, 0,
+                   (address >> 7) & 1, (address >> 6) & 1, (address >> 5) & 1, (address >> 4) & 1,
+                   (address >> 3) & 1, (address >> 2) & 1, (address >> 1) & 1, address & 1);
+
+    // set_lcd_state_bitmask(out_reg, dir_reg, 0x0, address);
 }
 void shift_display(volatile uint32_t *out_reg, volatile uint32_t *dir_reg, int shift_direction) {
     uint32_t shift_command = 0x18;
