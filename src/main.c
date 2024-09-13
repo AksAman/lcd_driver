@@ -24,18 +24,18 @@ https://lcd-linux.sourceforge.net/pdfdocs/hd44780.pdf, 24, 43
 #define GPIO_OUT_OFFSET 0x504
 #define GPIO_IN_OFFSET 0x510
 #define GPIO_DIR_OFFSET 0x514
-#define LCD_RS 12
-#define LCD_RW 11
-#define LCD_E 10
+#define LCD_RS 1
+#define LCD_RW 2
+#define LCD_E 3
 
-#define LCD_D0 8
-#define LCD_D1 7
+#define LCD_D0 4
+#define LCD_D1 5
 #define LCD_D2 6
-#define LCD_D3 5
-#define LCD_D4 4
-#define LCD_D5 3
-#define LCD_D6 2
-#define LCD_D7 1
+#define LCD_D3 7
+#define LCD_D4 8
+#define LCD_D5 10
+#define LCD_D6 11
+#define LCD_D7 12
 
 #define LED_BIT_POSITION 14
 #define HIGH 1
